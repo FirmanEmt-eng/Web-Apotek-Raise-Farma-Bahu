@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Apotek Raise Farma Bahu</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.0/babel.min.js"></script>
 
   <style>
     ::-webkit-scrollbar { width: 6px; }
@@ -41,7 +43,6 @@
     const MenuIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>} />;
     const XIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
 
-    // Atribut wajib_resep diaktifkan buat validasi ketat
     const dataObatAwal = [
       { id_obat: 'OBT-001', nama_obat: 'Paracetamol 500mg', stok: 120, harga: 5000, wajib_resep: false },
       { id_obat: 'OBT-002', nama_obat: 'Amoxicillin 500mg', stok: 85, harga: 15000, wajib_resep: true },
@@ -62,7 +63,6 @@
     function App() {
       const [currentView, setCurrentView] = useState('beranda'); 
       const [userRole, setUserRole] = useState(null); 
-      // Menyimpan username yang sedang login (untuk nge-link resep ke pasien spesifik)
       const [loggedInUser, setLoggedInUser] = useState(null); 
       const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
       
@@ -75,7 +75,6 @@
       
       const [notifikasi, setNotifikasi] = useState('');
 
-      // Perbaikan notifikasi biar gak crash dengan state React
       const tampilkanNotif = (pesan) => {
         setNotifikasi(pesan);
         setTimeout(() => setNotifikasi(''), 3000);
@@ -113,7 +112,6 @@
             tampilkanNotif('Gagal: Batas maksimal stok tercapai');
             return;
           }
-          // Logika update keranjang yang benar
           setKeranjang(prev => prev.map(k => k.id_obat === item.id_obat ? { ...k, qty: k.qty + 1 } : k));
         } else {
           setKeranjang(prev => [...prev, { ...item, qty: 1 }]);
@@ -223,7 +221,6 @@
       );
 
       const ViewBeranda = () => {
-        // Cek secara spesifik apakah USER INI punya resep yang Diterima
         const hasResepDiterima = listResep.some(r => r.nama_pasien === loggedInUser && r.status === 'Diterima');
 
         return (
@@ -269,7 +266,6 @@
                   const inCart = keranjang.find(k => k.id_obat === item.id_obat)?.qty || 0;
                   const sisaStokReal = item.stok - inCart;
                   
-                  // Analisis pengunci tombol yang presisi
                   let btnDisabled = false;
                   let btnText = 'Beli Sekarang';
                   let btnClass = 'bg-sky-50 text-sky-600 hover:bg-sky-500 hover:text-white';
@@ -397,7 +393,6 @@
         const handleSubmitResep = () => {
           if (!selectedFile) return;
           const idBaru = `RSP-00${listResep.length + 1}`;
-          // Menautkan nama_pasien dengan loggedInUser
           setListResep([...listResep, { id_resep: idBaru, nama_pasien: loggedInUser, status: 'Menunggu Verifikasi', file_resep: selectedFile.name }]);
           setSelectedFile(null);
           tampilkanNotif('Resep berhasil dikirim ke antrean apoteker');
