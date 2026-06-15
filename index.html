@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apotek Raise Farma Bahu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    body { -webkit-font-smoothing: antialiased; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    const Icon = ({ path, size = 24, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {path}
+      </svg>
+    );
+    const SearchIcon = ({size, className}) => <Icon size={size} className={className} path={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />;
+    const ShoppingCartIcon = ({size, className}) => <Icon size={size} className={className} path={<><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></>} />;
+    const FileTextIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>} />;
+    const ClockIcon = ({size, className}) => <Icon size={size} className={className} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+    const UserIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />;
+    const LogOutIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>} />;
+    const PackageIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>} />;
+    const CheckSquareIcon = ({size, className}) => <Icon size={size} className={className} path={<><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>} />;
+    const MapPinIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>} />;
+    const ShieldCheckIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></>} />;
+    const MenuIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>} />;
+    const XIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
+
+    // Atribut wajib_resep diaktifkan buat validasi ketat
+    const dataObatAwal = [
+      { id_obat: 'OBT-001', nama_obat: 'Paracetamol 500mg', stok: 120, harga: 5000, wajib_resep: false },
+      { id_obat: 'OBT-002', nama_obat: 'Amoxicillin 500mg', stok: 85, harga: 15000, wajib_resep: true },
+      { id_obat: 'OBT-003', nama_obat: 'Vitamin C IPI', stok: 200, harga: 8000, wajib_resep: false },
+      { id_obat: 'OBT-004', nama_obat: 'Promag Tablet', stok: 45, harga: 9500, wajib_resep: false },
+      { id_obat: 'OBT-005', nama_obat: 'Antangin Cair', stok: 0, harga: 3500, wajib_resep: false },
+    ];
+
+    const riwayatAwal = [
+      { id_transaksi: 'TRX-101', tanggal: '2026-10-10', total_bayar: 20000, status_pembayaran: 'Lunas' },
+    ];
+
+    const resepAwal = [
+      { id_resep: 'RSP-001', nama_pasien: 'pasien', status: 'Menunggu Verifikasi', file_resep: 'resep_dokter_budi.jpg' },
+      { id_resep: 'RSP-002', nama_pasien: 'pasien', status: 'Sedang Verifikasi', file_resep: 'resep_rs_kandou.pdf' },
+    ];
+
+    function App() {
+      const [currentView, setCurrentView] = useState('beranda'); 
+      const [userRole, setUserRole] = useState(null); 
+      // Menyimpan username yang sedang login (untuk nge-link resep ke pasien spesifik)
+      const [loggedInUser, setLoggedInUser] = useState(null); 
+      const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+      
+      const [obat, setObat] = useState(dataObatAwal);
+      const [keranjang, setKeranjang] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      
+      const [listRiwayat, setListRiwayat] = useState(riwayatAwal);
+      const [listResep, setListResep] = useState(resepAwal);
+      
+      const [notifikasi, setNotifikasi] = useState('');
+
+      // Perbaikan notifikasi biar gak crash dengan state React
+      const tampilkanNotif = (pesan) => {
+        setNotifikasi(pesan);
+        setTimeout(() => setNotifikasi(''), 3000);
+      };
+
+      const navigateTo = (view) => {
+        const protectedViewsPelanggan = ['upload', 'checkout', 'riwayat'];
+        const protectedViewsApoteker = ['admin_stok', 'admin_resep'];
+
+        if (protectedViewsPelanggan.includes(view) && userRole !== 'pelanggan') {
+          setCurrentView('login');
+          setIsMobileMenuOpen(false);
+          return;
+        }
+        
+        if (protectedViewsApoteker.includes(view) && userRole !== 'apoteker') {
+          setCurrentView('login');
+          setIsMobileMenuOpen(false);
+          return;
+        }
+
+        setCurrentView(view);
+        setIsMobileMenuOpen(false);
+      };
+
+      const filteredObat = obat.filter(o => o.nama_obat.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const handleTambahKeranjang = (item) => {
+        if (item.stok <= 0) return;
+        
+        const existing = keranjang.find(k => k.id_obat === item.id_obat);
+        
+        if (existing) {
+          if (existing.qty >= item.stok) {
+            tampilkanNotif('Gagal: Batas maksimal stok tercapai');
+            return;
+          }
+          // Logika update keranjang yang benar
+          setKeranjang(prev => prev.map(k => k.id_obat === item.id_obat ? { ...k, qty: k.qty + 1 } : k));
+        } else {
+          setKeranjang(prev => [...prev, { ...item, qty: 1 }]);
+        }
+        
+        tampilkanNotif(`Sukses: ${item.nama_obat} masuk ke keranjang`);
+      };
+
+      const Sidebar = () => (
+        <React.Fragment>
+          <div className="md:hidden bg-white p-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-30 shadow-sm">
+            <div className="flex items-center space-x-2">
+              <div className="bg-sky-500 p-1.5 rounded-lg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-white">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-3-2-3H5c-1.25 0-2 1.75-2 3v8c0 7 4 8 7 8z" />
+                </svg>
+              </div>
+              <span className="font-extrabold text-slate-800 tracking-tight">RAISEFARMA</span>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
+              {isMobileMenuOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
+            </button>
+          </div>
+
+          <aside className={`fixed inset-y-0 left-0 bg-white w-64 border-r border-slate-100 flex flex-col transition-transform duration-300 z-20 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+            <div className="p-6 hidden md:flex items-center space-x-3 mb-6">
+              <div className="bg-sky-500 p-2 rounded-xl shadow-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-white">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h10M12 2v10M12 12l8.5-8.5" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-lg text-slate-800 leading-tight">RAISEFARMA</span>
+                <span className="text-[10px] font-bold text-sky-600 tracking-widest">APOTEK BAHU</span>
+              </div>
+            </div>
+
+            <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pt-6 md:pt-0">
+              {userRole === 'apoteker' ? (
+                <React.Fragment>
+                  <button onClick={() => navigateTo('admin_resep')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors ${currentView === 'admin_resep' ? 'bg-sky-50 text-sky-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <CheckSquareIcon size={20} /> <span>Verifikasi Resep</span>
+                  </button>
+                  <button onClick={() => navigateTo('admin_stok')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors ${currentView === 'admin_stok' ? 'bg-sky-50 text-sky-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <PackageIcon size={20} /> <span>Kelola Stok</span>
+                  </button>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <button onClick={() => navigateTo('beranda')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors ${currentView === 'beranda' ? 'bg-sky-50 text-sky-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    <span>Beranda</span>
+                  </button>
+                  <button onClick={() => navigateTo('beranda')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors text-slate-500 hover:bg-slate-50 hover:text-slate-800`}>
+                    <SearchIcon size={20} /> <span>Katalog</span>
+                  </button>
+                  <button onClick={() => navigateTo('upload')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors ${currentView === 'upload' ? 'bg-sky-50 text-sky-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <FileTextIcon size={20} /> <span>Upload Resep</span>
+                  </button>
+                  <button onClick={() => navigateTo('riwayat')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-colors ${currentView === 'riwayat' ? 'bg-sky-50 text-sky-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <ClockIcon size={20} /> <span>Riwayat Transaksi</span>
+                  </button>
+                </React.Fragment>
+              )}
+            </nav>
+
+            <div className="p-4 border-t border-slate-100 space-y-3">
+              {!userRole && currentView !== 'login' && (
+                <button onClick={() => navigateTo('checkout')} className="w-full flex items-center justify-between bg-white border-2 border-slate-100 text-slate-700 px-4 py-3 rounded-xl font-bold hover:border-sky-200 transition-colors">
+                  <div className="flex items-center space-x-2"><ShoppingCartIcon size={18} /> <span>Keranjang</span></div>
+                  {keranjang.length > 0 && <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{keranjang.reduce((acc, curr) => acc + curr.qty, 0)}</span>}
+                </button>
+              )}
+
+              {userRole ? (
+                <div className="bg-slate-50 p-3 rounded-xl">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="bg-sky-100 p-2 rounded-full text-sky-600"><UserIcon size={20} /></div>
+                    <div className="overflow-hidden">
+                      <p className="text-xs text-slate-500 font-semibold">Login sebagai</p>
+                      <p className="font-bold text-slate-800 capitalize truncate">{userRole} ({loggedInUser})</p>
+                    </div>
+                  </div>
+                  {userRole === 'pelanggan' && (
+                    <button onClick={() => navigateTo('checkout')} className="w-full mb-2 flex items-center justify-between bg-sky-500 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-sky-600 transition">
+                      <div className="flex items-center space-x-2"><ShoppingCartIcon size={16} /> <span>Keranjang</span></div>
+                      <span className="bg-white text-sky-600 text-xs rounded-full h-5 w-5 flex items-center justify-center">{keranjang.reduce((acc, curr) => acc + curr.qty, 0)}</span>
+                    </button>
+                  )}
+                  <button onClick={() => { setUserRole(null); setLoggedInUser(null); setKeranjang([]); navigateTo('beranda'); }} className="w-full flex items-center justify-center space-x-2 bg-white border border-slate-200 text-red-500 px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-50 transition">
+                    <LogOutIcon size={16} /> <span>Keluar</span>
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => navigateTo('login')} className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-sky-400 to-emerald-400 text-white px-4 py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg transition transform active:scale-95">
+                  <UserIcon size={18} /> <span>Masuk / Login</span>
+                </button>
+              )}
+            </div>
+          </aside>
+
+          {isMobileMenuOpen && (
+            <div className="fixed inset-0 bg-slate-900/50 z-10 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+          )}
+        </React.Fragment>
+      );
+
+      const ViewBeranda = () => {
+        // Cek secara spesifik apakah USER INI punya resep yang Diterima
+        const hasResepDiterima = listResep.some(r => r.nama_pasien === loggedInUser && r.status === 'Diterima');
+
+        return (
+          <div className="pb-12 animate-in fade-in duration-500 relative">
+            <div className="bg-[#0f172a] rounded-b-[40px] px-6 pt-12 pb-24 md:px-16 md:pt-20 md:pb-32 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-500/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
+              
+              <div className="relative z-10 max-w-3xl">
+                <span className="inline-flex items-center bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 shadow-sm border border-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-white inline-block mr-2 animate-pulse"></span>
+                  Buka Sekarang
+                </span>
+                <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+                  Sehat Lebih <span className="text-[#00B4D8]">Dekat.</span>
+                </h1>
+                <p className="text-slate-300 md:text-lg max-w-xl leading-relaxed mb-8">
+                  Apotek terlengkap di Bahu, Manado. Pesan online, ambil di toko tanpa antri panjang.
+                </p>
+              </div>
+            </div>
+
+            <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
+              <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-slate-100 flex items-center mb-8 mx-2 md:mx-0">
+                <div className="pl-4 pr-2 text-slate-400"><SearchIcon size={24} /></div>
+                <div className="flex-1">
+                  <input 
+                    type="text" 
+                    placeholder="Cari Obat..." 
+                    className="w-full py-2 px-2 md:px-4 text-slate-800 text-lg font-medium focus:outline-none placeholder-slate-400 bg-transparent"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <p className="px-2 md:px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cek Stok Real-Time</p>
+                </div>
+                <button className="bg-[#00B4D8] text-white p-3.5 rounded-xl hover:bg-sky-500 transition-colors shadow-md">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </button>
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-slate-800 mb-6">Etalase Obat</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredObat.map(item => {
+                  const inCart = keranjang.find(k => k.id_obat === item.id_obat)?.qty || 0;
+                  const sisaStokReal = item.stok - inCart;
+                  
+                  // Analisis pengunci tombol yang presisi
+                  let btnDisabled = false;
+                  let btnText = 'Beli Sekarang';
+                  let btnClass = 'bg-sky-50 text-sky-600 hover:bg-sky-500 hover:text-white';
+
+                  if (sisaStokReal <= 0) {
+                    btnDisabled = true;
+                    btnText = 'Stok Habis';
+                    btnClass = 'bg-slate-100 text-slate-400 cursor-not-allowed';
+                  } else if (item.wajib_resep && !hasResepDiterima) {
+                    btnDisabled = true;
+                    btnText = userRole === 'pelanggan' ? 'Upload Resep Dulu' : 'Wajib Resep Dokter';
+                    btnClass = 'bg-red-50 text-red-500 cursor-not-allowed border border-red-100';
+                  }
+
+                  return (
+                  <div key={item.id_obat} className="bg-white p-6 border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+                    {item.wajib_resep && (
+                      <div className="absolute top-4 right-0 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-l-lg shadow-sm tracking-widest uppercase">
+                        Resep Dokter
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-bold tracking-wider text-slate-400 mb-2">{item.id_obat}</p>
+                      <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-sky-600 transition-colors pr-16">{item.nama_obat}</h3>
+                      <p className="text-3xl font-black text-slate-800 my-4 tracking-tight">Rp {item.harga.toLocaleString('id-ID')}</p>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className={`w-2 h-2 rounded-full ${sisaStokReal > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                        <p className={`text-sm font-semibold ${sisaStokReal > 0 ? 'text-slate-600' : 'text-red-500'}`}>
+                          Sisa Stok: {sisaStokReal}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleTambahKeranjang(item)}
+                      disabled={btnDisabled}
+                      className={`mt-6 w-full py-3.5 rounded-xl font-bold transition-all transform active:scale-95 flex items-center justify-center space-x-2 ${btnClass}`}
+                    >
+                      <ShoppingCartIcon size={18} />
+                      <span>{btnText}</span>
+                    </button>
+                  </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const ViewLogin = () => {
+        const [loginType, setLoginType] = useState('pelanggan'); 
+        const [usernameInput, setUsernameInput] = useState('');
+        const [passwordInput, setPasswordInput] = useState('');
+        const [loginError, setLoginError] = useState('');
+
+        const handleLoginSubmit = (e) => {
+          e.preventDefault();
+          
+          if (!usernameInput || !passwordInput) {
+            setLoginError('Mohon lengkapi username dan password.');
+            return;
+          }
+          
+          if (loginType === 'admin') {
+            if (usernameInput === 'admin' && passwordInput === 'admin123') {
+              setUserRole('apoteker');
+              setLoggedInUser('admin');
+              navigateTo('admin_stok');
+            } else {
+              setLoginError('Kredensial Admin tidak valid! Akses ditolak.');
+            }
+          } else {
+            if (usernameInput === 'pasien' && passwordInput === 'pasien123') {
+              setUserRole('pelanggan');
+              setLoggedInUser('pasien');
+              navigateTo('beranda');
+            } else {
+              setLoginError('Username atau password pasien salah.');
+            }
+          }
+        };
+
+        const handleTabSwitch = (type) => {
+          setLoginType(type);
+          setLoginError('');
+          setUsernameInput('');
+          setPasswordInput('');
+        };
+
+        return (
+          <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+            <div className="bg-white p-8 rounded-[24px] shadow-xl shadow-slate-200/50 border border-slate-100 w-full max-w-md">
+              <h3 className="font-bold text-slate-700 mb-4 text-center">Masuk sebagai Pengguna atau Admin?</h3>
+              <div className="flex bg-slate-100 p-1.5 rounded-xl mb-6">
+                <button onClick={() => handleTabSwitch('pelanggan')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${loginType === 'pelanggan' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500'}`}>Pengguna</button>
+                <button onClick={() => handleTabSwitch('admin')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${loginType === 'admin' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}>Apoteker</button>
+              </div>
+              
+              {loginError && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm font-semibold">{loginError}</div>}
+
+              <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Username</label>
+                  <input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} className="w-full p-3.5 border-2 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Masukkan username" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                  <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full p-3.5 border-2 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Masukkan kata sandi" />
+                </div>
+                <button type="submit" className={`w-full text-white p-4 rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition-all active:scale-95 ${loginType === 'admin' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-sky-500 hover:bg-sky-600'}`}>Masuk</button>
+              </form>
+            </div>
+          </div>
+        );
+      };
+
+      const ViewUploadResep = () => {
+        const [selectedFile, setSelectedFile] = useState(null);
+        const fileInputRef = useRef(null);
+
+        const handleFileChange = (e) => {
+          if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
+        };
+
+        const handleSubmitResep = () => {
+          if (!selectedFile) return;
+          const idBaru = `RSP-00${listResep.length + 1}`;
+          // Menautkan nama_pasien dengan loggedInUser
+          setListResep([...listResep, { id_resep: idBaru, nama_pasien: loggedInUser, status: 'Menunggu Verifikasi', file_resep: selectedFile.name }]);
+          setSelectedFile(null);
+          tampilkanNotif('Resep berhasil dikirim ke antrean apoteker');
+          navigateTo('beranda');
+        };
+
+        return (
+          <div className="p-6 md:p-10 max-w-3xl mx-auto animate-in fade-in">
+            <h2 className="text-3xl font-extrabold text-slate-800 mb-2">Unggah Resep Medis</h2>
+            <div className="bg-white p-8 border border-slate-100 rounded-[24px] shadow-sm">
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg,.png,.pdf" />
+              <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-sky-200 p-12 text-center rounded-2xl mb-8 bg-sky-50/50 hover:bg-sky-50 cursor-pointer">
+                <FileTextIcon className={`mx-auto mb-4 ${selectedFile ? 'text-emerald-500' : 'text-sky-400'}`} size={56} />
+                <h3 className="text-lg font-bold text-slate-700">{selectedFile ? selectedFile.name : 'Pilih File Resep'}</h3>
+              </div>
+              <button onClick={handleSubmitResep} disabled={!selectedFile} className={`w-full py-4 rounded-xl font-bold text-lg shadow-md ${selectedFile ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Kirim Dokumen</button>
+            </div>
+          </div>
+        );
+      };
+
+      const ViewRiwayat = () => (
+        <div className="p-6 md:p-10 max-w-5xl mx-auto animate-in fade-in">
+          <h2 className="text-3xl font-extrabold text-slate-800 mb-8">Riwayat Transaksi Saya</h2>
+          <div className="bg-white shadow-sm border border-slate-100 rounded-[24px] overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr><th className="p-5 font-bold text-slate-600">ID Transaksi</th><th className="p-5 font-bold text-slate-600">Tanggal</th><th className="p-5 font-bold text-slate-600">Total Tagihan</th><th className="p-5 font-bold text-slate-600">Status</th></tr>
+              </thead>
+              <tbody>
+                {listRiwayat.map(trx => (
+                  <tr key={trx.id_transaksi} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="p-5 font-mono text-sm text-slate-500">{trx.id_transaksi}</td>
+                    <td className="p-5 font-medium text-slate-700">{trx.tanggal}</td>
+                    <td className="p-5 font-black text-slate-800">Rp {trx.total_bayar.toLocaleString('id-ID')}</td>
+                    <td className="p-5"><span className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold uppercase">{trx.status_pembayaran}</span></td>
+                  </tr>
+                ))}
+                {listRiwayat.length === 0 && (
+                  <tr><td colSpan="4" className="text-center p-8 text-slate-500">Belum ada riwayat transaksi.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+
+      const ViewAdminStok = () => {
+        const handleHapus = (id) => setObat(obat.filter(o => o.id_obat !== id));
+        return (
+          <div className="p-6 md:p-10 max-w-6xl mx-auto animate-in fade-in">
+            <h2 className="text-3xl font-extrabold text-slate-800 mb-8">Manajemen Inventaris</h2>
+            <div className="bg-white shadow-sm border border-slate-100 rounded-[24px] overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr><th className="p-5 font-bold text-slate-600">ID Obat</th><th className="p-5 font-bold text-slate-600">Nama Farmasi</th><th className="p-5 font-bold text-slate-600">Sisa Stok</th><th className="p-5 font-bold text-slate-600">Operasi</th></tr>
+                </thead>
+                <tbody>
+                  {obat.map(item => (
+                    <tr key={item.id_obat} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <td className="p-5 text-sm font-mono text-slate-400">{item.id_obat}</td>
+                      <td className="p-5 font-bold text-slate-800">{item.nama_obat}</td>
+                      <td className="p-5"><span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${item.stok > 10 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600'}`}>{item.stok} unit</span></td>
+                      <td className="p-5 space-x-4"><button onClick={() => handleHapus(item.id_obat)} className="text-red-500 font-bold text-sm">Hapus</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      };
+
+      const ViewAdminResep = () => {
+        const handleUpdateStatus = (id_resep, statusBaru) => {
+          setListResep(listResep.map(r => r.id_resep === id_resep ? { ...r, status: statusBaru } : r));
+        };
+
+        return (
+          <div className="p-6 md:p-10 max-w-6xl mx-auto animate-in fade-in">
+            <h2 className="text-3xl font-extrabold text-slate-800 mb-8">Antrean Verifikasi Medis</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {listResep.map(resep => {
+                let statusClass = 'bg-amber-100 text-amber-700';
+                if (resep.status === 'Sedang Verifikasi') statusClass = 'bg-sky-100 text-sky-700';
+                if (resep.status === 'Diterima') statusClass = 'bg-emerald-100 text-emerald-700';
+                if (resep.status === 'Ditolak') statusClass = 'bg-red-100 text-red-700';
+
+                return (
+                  <div key={resep.id_resep} className="bg-white p-6 border rounded-[24px] shadow-sm flex flex-col justify-between border-slate-100">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Pasien: {resep.nama_pasien}</h3>
+                      <span className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block mt-2 ${statusClass}`}>{resep.status}</span>
+                    </div>
+                    
+                    <div className="mt-6 border-t border-slate-50 pt-4">
+                      {resep.status === 'Menunggu Verifikasi' && (
+                        <button onClick={() => handleUpdateStatus(resep.id_resep, 'Sedang Verifikasi')} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900">Proses Resep</button>
+                      )}
+                      {resep.status === 'Sedang Verifikasi' && (
+                        <div className="flex space-x-3">
+                          <button onClick={() => handleUpdateStatus(resep.id_resep, 'Diterima')} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl font-bold hover:bg-emerald-600">Terima</button>
+                          <button onClick={() => handleUpdateStatus(resep.id_resep, 'Ditolak')} className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100">Tolak</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      };
+
+      const ViewCheckout = () => {
+        const totalHarga = keranjang.reduce((acc, item) => acc + (item.harga * item.qty), 0);
+        
+        const prosesPembayaran = () => {
+          const obatUpdate = obat.map(o => {
+            const beli = keranjang.find(k => k.id_obat === o.id_obat);
+            return beli ? { ...o, stok: o.stok - beli.qty } : o;
+          });
+          setObat(obatUpdate);
+
+          const trxBaru = { id_transaksi: `TRX-${100 + listRiwayat.length + 1}`, tanggal: new Date().toISOString().split('T')[0], total_bayar: totalHarga, status_pembayaran: 'Lunas' };
+          setListRiwayat([...listRiwayat, trxBaru]);
+          setKeranjang([]);
+          tampilkanNotif('Pembayaran berhasil. Struk tersimpan.');
+          navigateTo('riwayat');
+        };
+
+        return (
+          <div className="p-6 md:p-10 max-w-2xl mx-auto mt-10 animate-in zoom-in-95">
+            <h2 className="text-3xl font-extrabold text-slate-800 mb-6 text-center">Kasir Digital</h2>
+            <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-8">
+              {keranjang.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-lg text-slate-500 font-medium">Keranjang masih kosong.</p>
+                  <button onClick={() => navigateTo('beranda')} className="mt-6 text-sky-600 font-bold hover:underline">Kembali Belanja</button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4 mb-8">
+                    {keranjang.map(item => (
+                      <div key={item.id_obat} className="flex justify-between border-b pb-4">
+                        <div><p className="font-bold text-slate-800">{item.nama_obat}</p><p className="text-sm text-slate-500">{item.qty} x Rp {item.harga.toLocaleString('id-ID')}</p></div>
+                        <p className="font-bold text-slate-800">Rp {(item.qty * item.harga).toLocaleString('id-ID')}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl mb-8 border border-slate-100">
+                    <span className="font-bold text-slate-600">Total Tagihan</span>
+                    <span className="text-2xl font-black text-emerald-600">Rp {totalHarga.toLocaleString('id-ID')}</span>
+                  </div>
+                  <button onClick={prosesPembayaran} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl text-lg shadow-md transform active:scale-95 transition-all">Bayar & Proses Pesanan</button>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-[#F8FAFC] font-sans flex relative">
+          {notifikasi && (
+            <div className="fixed top-6 right-6 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-xl z-50 font-bold animate-in slide-in-from-top-5 border border-emerald-500 flex items-center space-x-3">
+              <CheckSquareIcon size={20} />
+              <span>{notifikasi}</span>
+            </div>
+          )}
+          
+          <Sidebar />
+          <main className="flex-1 md:ml-64 w-full">
+            {currentView === 'beranda' && <ViewBeranda />}
+            {currentView === 'login' && <ViewLogin />}
+            {currentView === 'upload' && <ViewUploadResep />}
+            {currentView === 'riwayat' && <ViewRiwayat />}
+            {currentView === 'admin_stok' && <ViewAdminStok />}
+            {currentView === 'admin_resep' && <ViewAdminResep />}
+            {currentView === 'checkout' && <ViewCheckout />}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
