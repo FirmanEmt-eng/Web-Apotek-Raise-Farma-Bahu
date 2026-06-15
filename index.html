@@ -9,7 +9,7 @@
   
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.0/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.8/babel.min.js"></script>
 
   <style>
     ::-webkit-scrollbar { width: 6px; }
@@ -42,6 +42,7 @@
     const ShieldCheckIcon = ({size, className}) => <Icon size={size} className={className} path={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></>} />;
     const MenuIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>} />;
     const XIcon = ({size, className}) => <Icon size={size} className={className} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
+    const AlertCircleIcon = ({size, className}) => <Icon size={size} className={className} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} />;
 
     const dataObatAwal = [
       { id_obat: 'OBT-001', nama_obat: 'Paracetamol 500mg', stok: 120, harga: 5000, wajib_resep: false },
@@ -74,9 +75,11 @@
       const [listResep, setListResep] = useState(resepAwal);
       
       const [notifikasi, setNotifikasi] = useState('');
+      const [tipeNotif, setTipeNotif] = useState('sukses'); 
 
-      const tampilkanNotif = (pesan) => {
+      const tampilkanNotif = (pesan, tipe = 'sukses') => {
         setNotifikasi(pesan);
+        setTipeNotif(tipe);
         setTimeout(() => setNotifikasi(''), 3000);
       };
 
@@ -103,13 +106,29 @@
       const filteredObat = obat.filter(o => o.nama_obat.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const handleTambahKeranjang = (item) => {
-        if (item.stok <= 0) return;
+        if (item.stok <= 0) {
+            tampilkanNotif('Gagal: Stok obat habis', 'error');
+            return;
+        }
+
+        // Cek ganda di mesin logika. Jangan sampai tembus.
+        if (item.wajib_resep) {
+            if (userRole !== 'pelanggan') {
+                tampilkanNotif('Akses Ditolak: Obat Keras wajib login pasien', 'error');
+                return;
+            }
+            const hasResepDiterima = listResep.some(r => r.nama_pasien === loggedInUser && r.status === 'Diterima');
+            if (!hasResepDiterima) {
+                tampilkanNotif('Akses Ditolak: Wajib upload resep dan tunggu verifikasi', 'error');
+                return;
+            }
+        }
         
         const existing = keranjang.find(k => k.id_obat === item.id_obat);
         
         if (existing) {
           if (existing.qty >= item.stok) {
-            tampilkanNotif('Gagal: Batas maksimal stok tercapai');
+            tampilkanNotif('Gagal: Batas maksimal stok tercapai', 'error');
             return;
           }
           setKeranjang(prev => prev.map(k => k.id_obat === item.id_obat ? { ...k, qty: k.qty + 1 } : k));
@@ -117,7 +136,7 @@
           setKeranjang(prev => [...prev, { ...item, qty: 1 }]);
         }
         
-        tampilkanNotif(`Sukses: ${item.nama_obat} masuk ke keranjang`);
+        tampilkanNotif(`Sukses: ${item.nama_obat} masuk ke keranjang`, 'sukses');
       };
 
       const Sidebar = () => (
@@ -276,7 +295,7 @@
                     btnClass = 'bg-slate-100 text-slate-400 cursor-not-allowed';
                   } else if (item.wajib_resep && !hasResepDiterima) {
                     btnDisabled = true;
-                    btnText = userRole === 'pelanggan' ? 'Upload Resep Dulu' : 'Wajib Resep Dokter';
+                    btnText = userRole === 'pelanggan' ? 'Upload Resep Dulu' : 'Wajib Login & Resep';
                     btnClass = 'bg-red-50 text-red-500 cursor-not-allowed border border-red-100';
                   }
 
@@ -395,7 +414,7 @@
           const idBaru = `RSP-00${listResep.length + 1}`;
           setListResep([...listResep, { id_resep: idBaru, nama_pasien: loggedInUser, status: 'Menunggu Verifikasi', file_resep: selectedFile.name }]);
           setSelectedFile(null);
-          tampilkanNotif('Resep berhasil dikirim ke antrean apoteker');
+          tampilkanNotif('Resep berhasil dikirim ke antrean apoteker', 'sukses');
           navigateTo('beranda');
         };
 
@@ -520,7 +539,7 @@
           const trxBaru = { id_transaksi: `TRX-${100 + listRiwayat.length + 1}`, tanggal: new Date().toISOString().split('T')[0], total_bayar: totalHarga, status_pembayaran: 'Lunas' };
           setListRiwayat([...listRiwayat, trxBaru]);
           setKeranjang([]);
-          tampilkanNotif('Pembayaran berhasil. Struk tersimpan.');
+          tampilkanNotif('Pembayaran berhasil. Struk tersimpan.', 'sukses');
           navigateTo('riwayat');
         };
 
@@ -558,8 +577,8 @@
       return (
         <div className="min-h-screen bg-[#F8FAFC] font-sans flex relative">
           {notifikasi && (
-            <div className="fixed top-6 right-6 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-xl z-50 font-bold animate-in slide-in-from-top-5 border border-emerald-500 flex items-center space-x-3">
-              <CheckSquareIcon size={20} />
+            <div className={`fixed top-6 right-6 text-white px-6 py-4 rounded-2xl shadow-xl z-50 font-bold animate-in slide-in-from-top-5 border flex items-center space-x-3 ${tipeNotif === 'error' ? 'bg-red-600 border-red-500' : 'bg-emerald-600 border-emerald-500'}`}>
+              {tipeNotif === 'error' ? <AlertCircleIcon size={20} /> : <CheckSquareIcon size={20} />}
               <span>{notifikasi}</span>
             </div>
           )}
@@ -583,3 +602,4 @@
   </script>
 </body>
 </html>
+
